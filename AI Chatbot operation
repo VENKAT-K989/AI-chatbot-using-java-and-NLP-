@@ -1,0 +1,38 @@
+BEGIN
+    DISPLAY "AI Chatbot (Java + NLP)"
+    DISPLAY "Type 'bye' or 'exit' to end the conversation."
+
+    WHILE TRUE DO
+        PROMPT user for input
+        READ userInput
+
+        IF userInput EQUALS "bye" OR "exit" THEN
+            DISPLAY "Chatbot: Goodbye! See you soon!"
+            BREAK
+        ENDIF
+
+        // --- Preprocessing Step ---
+        SET processedInput ← TO_LOWERCASE(userInput)
+        REMOVE punctuation FROM processedInput
+        TOKENIZE processedInput INTO wordList
+
+        // --- Intent Recognition Step ---
+        SET intentFound ← FALSE
+        FOR EACH key IN knowledgeBase.keys() DO
+            IF processedInput CONTAINS key THEN
+                SET response ← knowledgeBase[key]
+                SET intentFound ← TRUE
+                BREAK
+            ENDIF
+        ENDFOR
+
+        // --- Response Generation Step ---
+        IF intentFound = TRUE THEN
+            DISPLAY "Chatbot: " + response
+        ELSE
+            DISPLAY "Chatbot: I'm sorry, I didn’t quite understand that. Can you rephrase?"
+        ENDIF
+
+    ENDWHILE
+
+END
