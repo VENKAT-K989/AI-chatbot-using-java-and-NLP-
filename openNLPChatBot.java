@@ -1,43 +1,73 @@
-import java.util.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 
-public class ChatBot {
+import opennlp.tools.postag.POSModel;
+import opennlp.tools.postag.POSTaggerME;
+import opennlp.tools.tokenize.SimpleTokenizer;
+
+public class OpenNLPChatBot {
+
     private static Map<String, String> knowledgeBase = new HashMap<>();
 
     static {
-        knowledgeBase.put("hi", "Hello! How can I help you?");
-        knowledgeBase.put("hello", "Hi there! What can I do for you?");
-        knowledgeBase.put("how are you", "I'm just a program, but I'm doing great!");
-        knowledgeBase.put("what is your name", "I'm your Java AI Chatbot!");
-        knowledgeBase.put("bye", "Goodbye! Have a nice day!");
+        knowledgeBase.put("greeting", "Hello! How can I help you?");
+        knowledgeBase.put("name_query", "I'm your Java AI Chatbot!");
+        knowledgeBase.put("farewell", "Goodbye! Have a nice day!");
     }
 
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         System.out.println("AI Chatbot: Hello! Type 'bye' to exit.");
 
+        // Load POS Tagger model
+        POSModel model = null;
+        try {
+            model = new POSModel(new FileInputStream("en-pos-maxent.bin"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        POSTaggerME tagger = new POSTaggerME(model);
+
+        SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
+
         while (true) {
             System.out.print("You: ");
-            String userInput = sc.nextLine().toLowerCase();
+            String userInput = sc.nextLine();
 
-            // Simple tokenization (simulate NLP)
-            String[] tokens = userInput.split(" ");
-
-            // Find best response
-            String response = getResponse(userInput);
-            System.out.println("AI Chatbot: " + response);
-
-            if (userInput.contains("bye"))
+            if (userInput.equalsIgnoreCase("bye")) {
+                System.out.println("AI Chatbot: " + knowledgeBase.get("farewell"));
                 break;
+            }
+
+            // Tokenization
+            String[] tokens = tokenizer.tokenize(userInput);
+            // POS Tagging
+            String[] posTags = tagger.tag(tokens);
+
+            // Basic intent recognition
+            String intent = recognizeIntent(tokens, posTags);
+
+            // Respond
+            System.out.println("AI Chatbot: " + knowledgeBase.getOrDefault(intent, 
+                "I'm not sure I understand. Can you rephrase?"));
         }
         sc.close();
     }
 
-    private static String getResponse(String input) {
-        for (String key : knowledgeBase.keySet()) {
-            if (input.contains(key)) {
-                return knowledgeBase.get(key);
+    // Simple intent recognition based on keywords
+    private static String recognizeIntent(String[] tokens, String[] posTags) {
+        for (String token : tokens) {
+            token = token.toLowerCase();
+            if (token.equals("hi") || token.equals("hello") || token.equals("hey")) {
+                return "greeting";
+            }
+            if (token.contains("name")) {
+                return "name_query";
             }
         }
-        return "I'm not sure I understand. Can you rephrase?";
+        return "unknown";
     }
 }
